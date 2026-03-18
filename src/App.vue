@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import draggable from 'vuedraggable'
 
 // 组件类型定义
 interface ChartComponent {
@@ -37,7 +36,7 @@ const addComponent = (type: string) => {
   const newComponent: ChartComponent = {
     id: Date.now().toString(),
     name: libItem?.name || '新组件',
-    type: type as any,
+    type: type as ChartComponent['type'],
     x: 0,
     y: components.value.length * 2,
     width: 4,
@@ -47,7 +46,7 @@ const addComponent = (type: string) => {
   components.value.push(newComponent)
 }
 
-const getDefaultData = (type: string) => {
+const getDefaultData = (type: string): any => {
   switch (type) {
     case 'bar': return { title: '柱状图', categories: ['A', 'B', 'C', 'D'], values: [100, 200, 150, 180] }
     case 'line': return { title: '折线图', categories: ['周一', '周二', '周三', '周四'], values: [100, 150, 120, 180] }
@@ -73,8 +72,15 @@ const selectComponent = (id: string) => {
 const selectedColor = ref('#1890ff')
 const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2']
 
-// 网格相关
-const gridSize = 1 // 每个格子代表 100px
+// 计算最大值用于图表比例
+const getMaxValue = (values: number[]): number => {
+  return Math.max(...values, 1)
+}
+
+// 计算饼图总值
+const getPieTotal = (values: any[]): number => {
+  return values?.reduce((a: number, b: any) => a + (b.value || 0), 0) || 1
+}
 </script>
 
 <template>
@@ -140,7 +146,7 @@ const gridSize = 1 // 每个格子代表 100px
                 :key="idx"
                 class="bar-item"
                 :style="{ 
-                  height: `${(val / Math.max(...comp.data.values)) * 100}%`,
+                  height: `${(val / getMaxValue(comp.data?.values || [])) * 100}%`,
                   backgroundColor: selectedColor
                 }"
               >
@@ -157,8 +163,8 @@ const gridSize = 1 // 每个格子代表 100px
             <div class="chart-title">{{ comp.data?.title }}</div>
             <svg class="line-svg" viewBox="0 0 300 150">
               <polyline
-                :points="comp.data?.values.map((v: number, i: number, arr: number[]) => 
-                  `${(i / (arr.length - 1)) * 280 + 10},${150 - (v / Math.max(...comp.data.values)) * 120 - 10}`
+                :points="comp.data?.values?.map((v: number, i: number, arr: number[]) => 
+                  `${(i / ((arr.length || 1) - 1)) * 280 + 10},${150 - (v / getMaxValue(comp.data?.values || [])) * 120 - 10}`
                 ).join(' ')"
                 fill="none"
                 :stroke="selectedColor"
@@ -167,8 +173,8 @@ const gridSize = 1 // 每个格子代表 100px
               <circle 
                 v-for="(v, i) in comp.data?.values" 
                 :key="i"
-                :cx="(i / (comp.data.values.length - 1)) * 280 + 10"
-                :cy="150 - (v / Math.max(...comp.data.values)) * 120 - 10"
+                :cx="(i / ((comp.data.values?.length || 1) - 1)) * 280 + 10"
+                :cy="150 - (v / getMaxValue(comp.data?.values || [])) * 120 - 10"
                 r="4"
                 :fill="selectedColor"
               />
@@ -189,8 +195,8 @@ const gridSize = 1 // 每个格子代表 100px
                 fill="transparent"
                 :stroke="colors[idx % colors.length]"
                 stroke-width="40"
-                :stroke-dasharray="`${(slice.value / comp.data.values.reduce((a: number, b: { value: number }) => a + b.value, 0)) * 502} 502`"
-                :stroke-dashoffset="`-${comp.data.values.slice(0, idx).reduce((a: number, b: { value: number }) => a + (b.value / comp.data.values.reduce((c: number, d: { value: number }) => c + d.value, 0)) * 502, 0)}`"
+                :stroke-dasharray="`${(slice.value / getPieTotal(comp.data?.values || [])) * 502} 502`"
+                :stroke-dashoffset="`-${comp.data?.values?.slice(0, idx).reduce((a: number, b: any) => a + (b.value / getPieTotal(comp.data?.values || [])) * 502, 0)}`"
                 transform="rotate(-90 100 100)"
               />
             </svg>

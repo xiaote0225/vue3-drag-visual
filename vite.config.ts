@@ -5,7 +5,7 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  base: '/vue3-drag-visual/',
+  base: '/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
@@ -16,7 +16,7 @@ export default defineConfig({
     port: 5173
   },
   build: {
-    outDir: 'dist',
+    outDir: 'docs',
     assetsDir: 'assets',
     sourcemap: false
   }
